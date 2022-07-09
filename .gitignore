@@ -3,6 +3,7 @@
 db.sqlite3
 venv/
 out/
+*.ipynb
 *.log
 *.pyc
 __pycache__
