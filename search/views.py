@@ -49,19 +49,20 @@ def get_all_possible_routes(departure_city, arrival_city, departure_time):
     current_route = []
     visited_airports = {}
     #print("possible routes = {}".format(len(possible_routes)))
-    # Since flight switch not need for first flight
-    departure_time = int(departure_time) - flight_switch_time
-    search_feasible_flights(possible_routes, departure_city, arrival_city, departure_time,
+    search_feasible_flights(possible_routes, departure_city, arrival_city, int(departure_time),
         flight_switch_time, max_time_between_flights, max_flight_changes_allowed, current_route, visited_airports)  
     return possible_routes
 
 def search_feasible_flights(possible_routes, departure_city, destination, arrival_time, flight_switch_time, max_wait_time, 
-    flights_remaining, current_route, visited_airports):
+    flights_remaining, current_route, visited_airports, first_flight= True):
     #print("flights_remaining = {}".format(flights_remaining))
     #print("current_route = {}".format(current_route))
     if flights_remaining < 1:
         return
-    available_flights= get_available_flights(departure_city, arrival_time+flight_switch_time, arrival_time+max_wait_time)
+    flights_departure_time_after = arrival_time
+    if not first_flight:
+        flights_departure_time_after = arrival_time + flight_switch_time
+    available_flights= get_available_flights(departure_city, flights_departure_time_after, arrival_time + max_wait_time)
     for flight in available_flights:
         if flight['arrival_city'] == destination:
             current_route.append(flight)
@@ -75,7 +76,7 @@ def search_feasible_flights(possible_routes, departure_city, destination, arriva
         visited_airports[flight['id']] = flight['departure_city']
         current_route.append(flight)
         search_feasible_flights(possible_routes, flight['arrival_city'], destination, int(flight['arrival_time']),
-            flight_switch_time, max_wait_time, flights_remaining - 1, current_route, visited_airports)
+            flight_switch_time, max_wait_time, flights_remaining - 1, current_route, visited_airports, False)
         current_route.pop()
 
 def get_available_flights(departure_city, min_departure_time, max_departure_time):
