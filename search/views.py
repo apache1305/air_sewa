@@ -12,12 +12,12 @@ from .models import SearchConfig
 def flight_plan(request):
     # Request validations
     if request.method != 'GET':
-        return JsonResponse({"msg": "{} method not allowed!!!".format(request.method)}, 
+        return JsonResponse({"data": [], "msg": "{} method not allowed!!!".format(request.method)}, 
             status= status.HTTP_405_METHOD_NOT_ALLOWED)
     serializer = GetFlightSerializer(data= request.GET)
     if not serializer.is_valid():
         print("flight_plan failed for {} with error -- {}".format(request.GET, serializer.errors))
-        return JsonResponse(serializer.errors, status= status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({"data": [], "msg": serializer.errors}, status= status.HTTP_400_BAD_REQUEST)
     
     # Find best possible routes
     departure_city= serializer.data['departure_city']
@@ -33,7 +33,7 @@ def flight_plan(request):
     # Recommend routes with minimum flight switches i.e minimum route length
     possible_routes= sorted(possible_routes, key= (lambda route: len(route)))  
     print("Total flight_plans from {} to {} = {}".format(departure_city, arrival_city, len(possible_routes))) 
-    return JsonResponse(possible_routes, safe= False)
+    return JsonResponse({"data": possible_routes, "msg": ""})
 
 def get_all_possible_routes(departure_city, arrival_city, departure_time):
     # Get maxium number of flight changes allowed from Database - Search Configuration table
@@ -49,6 +49,7 @@ def get_all_possible_routes(departure_city, arrival_city, departure_time):
     current_route = []
     visited_airports = {}
     #print("possible routes = {}".format(len(possible_routes)))
+    # ToDo : Use BFS instead of DFS
     search_feasible_flights(possible_routes, departure_city, arrival_city, int(departure_time),
         flight_switch_time, max_time_between_flights, max_flight_changes_allowed, current_route, visited_airports)  
     return possible_routes
@@ -91,8 +92,10 @@ def get_available_flights(departure_city, min_departure_time, max_departure_time
     return flights
 
 def display_route(current_route):
+    print("ROUTE START :")
     pprint(["{} @ {} -> {} @ {}".format(
         airport['departure_city'], read_time(airport['departure_time']), airport['arrival_city'], read_time(airport['arrival_time'])) for airport in current_route])
+    print(": ROUTE END")
 
 def read_time(timestamp):
     return "{}".format(datetime.utcfromtimestamp(int(str(timestamp)[:10])).strftime('%Y-%m-%d %H:%M:%S'))
